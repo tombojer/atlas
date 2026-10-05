@@ -24,7 +24,7 @@ func TestDockerConfig(t *testing.T) {
 	cfg, err := MySQL("latest", Out(io.Discard))
 	require.NoError(t, err)
 	require.Equal(t, &Config{
-		Image: "arigaio/mysql:latest",
+		Image: "docker.io/arigaio/mysql:latest",
 		User:  url.UserPassword("root", pass),
 		Env:   []string{"MYSQL_ROOT_PASSWORD=pass"},
 		Port:  "3306",
@@ -35,7 +35,7 @@ func TestDockerConfig(t *testing.T) {
 	cfg, err = MariaDB("latest", Out(io.Discard))
 	require.NoError(t, err)
 	require.Equal(t, &Config{
-		Image: "arigaio/mariadb:latest",
+		Image: "docker.io/arigaio/mariadb:latest",
 		User:  url.UserPassword("root", pass),
 		Env:   []string{"MYSQL_ROOT_PASSWORD=pass"},
 		Port:  "3306",
@@ -46,7 +46,7 @@ func TestDockerConfig(t *testing.T) {
 	cfg, err = PostgreSQL("latest", Out(io.Discard))
 	require.NoError(t, err)
 	require.Equal(t, &Config{
-		Image:    "postgres:latest",
+		Image:    "docker.io/library/postgres:latest",
 		User:     url.UserPassword("postgres", pass),
 		Env:      []string{"POSTGRES_PASSWORD=pass"},
 		Database: "postgres",
@@ -74,7 +74,7 @@ func TestDockerConfig(t *testing.T) {
 	cfg, err = ClickHouse("23.11", Out(io.Discard))
 	require.NoError(t, err)
 	require.Equal(t, &Config{
-		Image: "clickhouse/clickhouse-server:23.11",
+		Image: "docker.io/clickhouse/clickhouse-server:23.11",
 		User:  url.UserPassword("default", pass),
 		Port:  "9000",
 		Out:   io.Discard,
@@ -91,7 +91,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver: "mysql",
-		Image:  "arigaio/mysql",
+		Image:  "docker.io/arigaio/mysql",
 		User:   url.UserPassword("root", pass),
 		Env:    []string{"MYSQL_ROOT_PASSWORD=pass"},
 		Port:   "3306",
@@ -104,7 +104,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver: "mysql",
-		Image:  "arigaio/mysql:8",
+		Image:  "docker.io/arigaio/mysql:8",
 		User:   url.UserPassword("root", pass),
 		Env:    []string{"MYSQL_ROOT_PASSWORD=pass"},
 		Port:   "3306",
@@ -117,7 +117,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "mysql",
-		Image:    "arigaio/mysql:latest",
+		Image:    "docker.io/arigaio/mysql:latest",
 		Database: "test",
 		Env:      []string{"MYSQL_ROOT_PASSWORD=pass", "MYSQL_DATABASE=test"},
 		User:     url.UserPassword("root", pass),
@@ -132,7 +132,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "postgres",
-		Image:    "postgres:13",
+		Image:    "docker.io/library/postgres:13",
 		Database: "postgres",
 		Env:      []string{"POSTGRES_PASSWORD=pass"},
 		User:     url.UserPassword("postgres", pass),
@@ -147,7 +147,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "postgres",
-		Image:    "postgis/postgis:14-3.4",
+		Image:    "docker.io/postgis/postgis:14-3.4",
 		Database: "postgres",
 		Env:      []string{"POSTGRES_PASSWORD=pass"},
 		User:     url.UserPassword("postgres", pass),
@@ -161,7 +161,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "postgres",
-		Image:    "postgis/postgis:14-3.4",
+		Image:    "docker.io/postgis/postgis:14-3.4",
 		Database: "dev",
 		Env:      []string{"POSTGRES_PASSWORD=pass"},
 		User:     url.UserPassword("postgres", pass),
@@ -177,7 +177,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "postgres",
-		Image:    "pgvector/pgvector:pg17",
+		Image:    "docker.io/pgvector/pgvector:pg17",
 		Database: "postgres",
 		Env:      []string{"POSTGRES_PASSWORD=pass"},
 		User:     url.UserPassword("postgres", pass),
@@ -191,7 +191,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "postgres",
-		Image:    "pgvector/pgvector:pg17",
+		Image:    "docker.io/pgvector/pgvector:pg17",
 		Database: "dev",
 		Env:      []string{"POSTGRES_PASSWORD=pass", "POSTGRES_DB=dev"},
 		User:     url.UserPassword("postgres", pass),
@@ -282,7 +282,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver: "clickhouse",
-		Image:  "clickhouse/clickhouse-server",
+		Image:  "docker.io/clickhouse/clickhouse-server",
 		Env:    []string{"CLICKHOUSE_PASSWORD=pass"},
 		User:   url.UserPassword("default", pass),
 		Port:   "9000",
@@ -296,7 +296,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver: "clickhouse",
-		Image:  "clickhouse/clickhouse-server:23.11",
+		Image:  "docker.io/clickhouse/clickhouse-server:23.11",
 		User:   url.UserPassword("default", pass),
 		Env:    []string{"CLICKHOUSE_PASSWORD=pass"},
 		Port:   "9000",

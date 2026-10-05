@@ -152,7 +152,7 @@ func FromURL(u *url.URL, opts ...ConfigOption) (*Config, error) {
 		cfg, err = MariaDB(tag, append(baseOpts, opts...)...)
 	case PostgresPostGIS:
 		baseOpts = append(baseOpts, Image(
-			fmt.Sprintf("%[1]s/%[1]s:%[2]s", PostgresPostGIS, tag),
+			fmt.Sprintf("docker.io/%[1]s/%[1]s:%[2]s", PostgresPostGIS, tag),
 		))
 		if dbName != "" && dbName != "postgres" {
 			// Create manually the PostgreSQL database instead of using the POSTGRES_DB because
@@ -167,7 +167,7 @@ func FromURL(u *url.URL, opts ...ConfigOption) (*Config, error) {
 		cfg, err = PostgreSQL(tag, append(baseOpts, opts...)...)
 	case PostgresPGVector:
 		baseOpts = append(baseOpts, Image(
-			fmt.Sprintf("%[1]s/%[1]s:%[2]s", PostgresPGVector, tag),
+			fmt.Sprintf("docker.io/%[1]s/%[1]s:%[2]s", PostgresPGVector, tag),
 		))
 		if dbName != "" {
 			baseOpts = append(baseOpts, Database(dbName), Env("POSTGRES_DB="+dbName))
@@ -226,7 +226,7 @@ func ImageURL(driver string, image string) (*url.URL, error) {
 
 // Atlas DockerHub user contains the MySQL
 // and MariaDB images with faster boot times.
-const hubUser = "arigaio"
+const hubUser = "docker.io/arigaio"
 
 // MySQL returns a new Config for a MySQL image.
 func MySQL(version string, opts ...ConfigOption) (*Config, error) {
@@ -253,7 +253,7 @@ func PostgreSQL(version string, opts ...ConfigOption) (*Config, error) {
 	return NewConfig(
 		append(
 			[]ConfigOption{
-				Image("postgres:" + version),
+				Image("docker.io/library/postgres:" + version),
 				Userinfo(url.UserPassword("postgres", pass)),
 				Port("5432"),
 				Database("postgres"),
@@ -289,7 +289,7 @@ func ClickHouse(version string, opts ...ConfigOption) (*Config, error) {
 	return NewConfig(
 		append(
 			[]ConfigOption{
-				Image("clickhouse/clickhouse-server:" + version),
+				Image("docker.io/clickhouse/clickhouse-server:" + version),
 				Userinfo(url.UserPassword("default", pass)),
 				Port("9000"),
 				Env("CLICKHOUSE_PASSWORD=" + pass),
