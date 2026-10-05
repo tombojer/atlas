@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -34,6 +35,7 @@ type (
 	// Config is used to configure container creation.
 	Config struct {
 		driver string   // driver to open connections with.
+		cli    string   // container CLI to run (docker or podman). Resolved on Run if empty.
 		setup  []string // contains statements to execute once the service is up
 		// User is the user to connect to the database.
 		User *url.Userinfo
@@ -94,8 +96,19 @@ const (
 	PostgresPGVector = "pgvector"
 )
 
+// Supported container CLIs.
+const (
+	CLIDocker = "docker"
+	CLIPodman = "podman"
+)
+
+// CLIEnv is the environment variable that overrides the container
+// CLI used for "docker://" URLs. For example, ATLAS_CONTAINER_CLI=podman.
+const CLIEnv = "ATLAS_CONTAINER_CLI"
+
 // FromURL parses a URL in the format of
-// "docker://driver/tag[/dbname]" and returns a Config.
+// "docker://driver/tag[/dbname]" or "podman://driver/tag[/dbname]"
+// and returns a Config.
 func FromURL(u *url.URL, opts ...ConfigOption) (*Config, error) {
 	var (
 		parts  = strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
@@ -109,8 +122,16 @@ func FromURL(u *url.URL, opts ...ConfigOption) (*Config, error) {
 	}
 	var baseOpts []ConfigOption
 	var tag string
-	// Support docker+driver://<image>[:<tag>]
-	driver, customImage := strings.CutPrefix(u.Scheme, "docker+")
+	// Support docker+driver://<image>[:<tag>] and podman+driver://<image>[:<tag>]
+	cli, driver, customImage := strings.Cut(u.Scheme, "+")
+	switch cli {
+	case CLIDocker:
+		// The CLI is resolved on Run, falling back to podman if docker is missing.
+	case CLIPodman:
+		baseOpts = append(baseOpts, CLI(CLIPodman))
+	default:
+		return nil, fmt.Errorf("unsupported container runtime %q", cli)
+	}
 	if customImage {
 		// The image is fully specified in the URL.
 		img := path.Join(parts[:idxTag+1]...)
@@ -386,10 +407,27 @@ func Conn(s *ConnOptions) ConfigOption {
 	}
 }
 
+// CLI sets the container CLI to run containers with. For example:
+//
+//	CLI("docker")
+//	CLI("podman")
+//
+// If not set, the CLI is taken from the ATLAS_CONTAINER_CLI environment
+// variable, or the first of docker and podman found in the PATH.
+func CLI(name string) ConfigOption {
+	return func(c *Config) error {
+		c.cli = name
+		return nil
+	}
+}
+
 // Run pulls and starts a new docker container from the Config.
 func (c *Config) Run(ctx context.Context) (*Container, error) {
 	// Make sure the configuration is not missing critical values.
 	if err := c.validate(); err != nil {
+		return nil, err
+	}
+	if err := c.resolveCLI(); err != nil {
 		return nil, err
 	}
 	// Get a free host TCP port the container can bind its exposed service port on.
@@ -398,7 +436,7 @@ func (c *Config) Run(ctx context.Context) (*Container, error) {
 		return nil, fmt.Errorf("getting open port: %w", err)
 	}
 	// Run the container.
-	args := []string{"docker", "run", "--rm", "--detach"}
+	args := []string{c.cli, "run", "--rm", "--detach"}
 	for _, e := range c.Env {
 		args = append(args, "-e", e)
 	}
@@ -421,7 +459,7 @@ func (c *Config) Run(ctx context.Context) (*Container, error) {
 
 // Close stops and removes this container.
 func (c *Container) Close() error {
-	return exec.Command("docker", "kill", c.ID).Run() //nolint:gosec
+	return exec.Command(c.cli, "kill", c.ID).Run() //nolint:gosec
 }
 
 // Wait waits for this container to be ready.
@@ -476,9 +514,13 @@ func (c *Container) Wait(ctx context.Context, timeout time.Duration) error {
 // URL returns a URL to connect to the Container.
 func (c *Container) URL() (*url.URL, error) {
 	host := "localhost"
-	// Check if the DOCKER_HOST env var is set.
+	// Check if the DOCKER_HOST (or CONTAINER_HOST for podman) env var is set.
 	// If it is, use the host from the URL.
-	if h := os.Getenv("DOCKER_HOST"); h != "" {
+	hostEnv := "DOCKER_HOST"
+	if c.isPodman() {
+		hostEnv = "CONTAINER_HOST"
+	}
+	if h := os.Getenv(hostEnv); h != "" {
 		u, err := url.Parse(h)
 		if err != nil {
 			return nil, err
@@ -537,6 +579,30 @@ func (c *Config) validate() error {
 	return nil
 }
 
+// resolveCLI sets the container CLI if it was not set explicitly.
+func (c *Config) resolveCLI() error {
+	if c.cli != "" {
+		return nil
+	}
+	if v := os.Getenv(CLIEnv); v != "" {
+		c.cli = v
+		return nil
+	}
+	for _, name := range []string{CLIDocker, CLIPodman} {
+		if _, err := exec.LookPath(name); err == nil {
+			c.cli = name
+			return nil
+		}
+	}
+	return errors.New("no container runtime found: install docker or podman")
+}
+
+// isPodman reports if the configured container CLI is podman.
+func (c *Config) isPodman() bool {
+	name := strings.ToLower(filepath.Base(c.cli))
+	return strings.TrimSuffix(name, ".exe") == CLIPodman
+}
+
 func freePort() (string, error) {
 	a, err := net.ResolveTCPAddr("tcp", ":0")
 	if err != nil {
@@ -560,6 +626,15 @@ func init() {
 			"docker+postgres",
 			"docker+mysql", "docker+maria", "docker+mariadb", "docker+clickhouse",
 			"docker+sqlserver",
+		),
+	)
+	sqlclient.Register(
+		"podman",
+		sqlclient.OpenerFunc(Open),
+		sqlclient.RegisterFlavours(
+			"podman+postgres",
+			"podman+mysql", "podman+maria", "podman+mariadb", "podman+clickhouse",
+			"podman+sqlserver",
 		),
 	)
 }
