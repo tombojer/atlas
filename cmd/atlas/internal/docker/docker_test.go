@@ -8,6 +8,8 @@ import (
 	"context"
 	"io"
 	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -24,7 +26,7 @@ func TestDockerConfig(t *testing.T) {
 	cfg, err := MySQL("latest", Out(io.Discard))
 	require.NoError(t, err)
 	require.Equal(t, &Config{
-		Image: "arigaio/mysql:latest",
+		Image: "docker.io/arigaio/mysql:latest",
 		User:  url.UserPassword("root", pass),
 		Env:   []string{"MYSQL_ROOT_PASSWORD=pass"},
 		Port:  "3306",
@@ -35,7 +37,7 @@ func TestDockerConfig(t *testing.T) {
 	cfg, err = MariaDB("latest", Out(io.Discard))
 	require.NoError(t, err)
 	require.Equal(t, &Config{
-		Image: "arigaio/mariadb:latest",
+		Image: "docker.io/arigaio/mariadb:latest",
 		User:  url.UserPassword("root", pass),
 		Env:   []string{"MYSQL_ROOT_PASSWORD=pass"},
 		Port:  "3306",
@@ -46,7 +48,7 @@ func TestDockerConfig(t *testing.T) {
 	cfg, err = PostgreSQL("latest", Out(io.Discard))
 	require.NoError(t, err)
 	require.Equal(t, &Config{
-		Image:    "postgres:latest",
+		Image:    "docker.io/library/postgres:latest",
 		User:     url.UserPassword("postgres", pass),
 		Env:      []string{"POSTGRES_PASSWORD=pass"},
 		Database: "postgres",
@@ -74,7 +76,7 @@ func TestDockerConfig(t *testing.T) {
 	cfg, err = ClickHouse("23.11", Out(io.Discard))
 	require.NoError(t, err)
 	require.Equal(t, &Config{
-		Image: "clickhouse/clickhouse-server:23.11",
+		Image: "docker.io/clickhouse/clickhouse-server:23.11",
 		User:  url.UserPassword("default", pass),
 		Port:  "9000",
 		Out:   io.Discard,
@@ -91,7 +93,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver: "mysql",
-		Image:  "arigaio/mysql",
+		Image:  "docker.io/arigaio/mysql",
 		User:   url.UserPassword("root", pass),
 		Env:    []string{"MYSQL_ROOT_PASSWORD=pass"},
 		Port:   "3306",
@@ -104,7 +106,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver: "mysql",
-		Image:  "arigaio/mysql:8",
+		Image:  "docker.io/arigaio/mysql:8",
 		User:   url.UserPassword("root", pass),
 		Env:    []string{"MYSQL_ROOT_PASSWORD=pass"},
 		Port:   "3306",
@@ -117,7 +119,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "mysql",
-		Image:    "arigaio/mysql:latest",
+		Image:    "docker.io/arigaio/mysql:latest",
 		Database: "test",
 		Env:      []string{"MYSQL_ROOT_PASSWORD=pass", "MYSQL_DATABASE=test"},
 		User:     url.UserPassword("root", pass),
@@ -132,7 +134,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "postgres",
-		Image:    "postgres:13",
+		Image:    "docker.io/library/postgres:13",
 		Database: "postgres",
 		Env:      []string{"POSTGRES_PASSWORD=pass"},
 		User:     url.UserPassword("postgres", pass),
@@ -147,7 +149,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "postgres",
-		Image:    "postgis/postgis:14-3.4",
+		Image:    "docker.io/postgis/postgis:14-3.4",
 		Database: "postgres",
 		Env:      []string{"POSTGRES_PASSWORD=pass"},
 		User:     url.UserPassword("postgres", pass),
@@ -161,7 +163,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "postgres",
-		Image:    "postgis/postgis:14-3.4",
+		Image:    "docker.io/postgis/postgis:14-3.4",
 		Database: "dev",
 		Env:      []string{"POSTGRES_PASSWORD=pass"},
 		User:     url.UserPassword("postgres", pass),
@@ -177,7 +179,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "postgres",
-		Image:    "pgvector/pgvector:pg17",
+		Image:    "docker.io/pgvector/pgvector:pg17",
 		Database: "postgres",
 		Env:      []string{"POSTGRES_PASSWORD=pass"},
 		User:     url.UserPassword("postgres", pass),
@@ -191,7 +193,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver:   "postgres",
-		Image:    "pgvector/pgvector:pg17",
+		Image:    "docker.io/pgvector/pgvector:pg17",
 		Database: "dev",
 		Env:      []string{"POSTGRES_PASSWORD=pass", "POSTGRES_DB=dev"},
 		User:     url.UserPassword("postgres", pass),
@@ -282,7 +284,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver: "clickhouse",
-		Image:  "clickhouse/clickhouse-server",
+		Image:  "docker.io/clickhouse/clickhouse-server",
 		Env:    []string{"CLICKHOUSE_PASSWORD=pass"},
 		User:   url.UserPassword("default", pass),
 		Port:   "9000",
@@ -296,7 +298,7 @@ func TestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, &Config{
 		driver: "clickhouse",
-		Image:  "clickhouse/clickhouse-server:23.11",
+		Image:  "docker.io/clickhouse/clickhouse-server:23.11",
 		User:   url.UserPassword("default", pass),
 		Env:    []string{"CLICKHOUSE_PASSWORD=pass"},
 		Port:   "9000",
@@ -441,6 +443,102 @@ func TestFromURL_CustomImage(t *testing.T) {
 	}
 }
 
+func TestFromURL_Podman(t *testing.T) {
+	u, err := url.Parse("podman://mysql/8/dev")
+	require.NoError(t, err)
+	cfg, err := FromURL(u)
+	require.NoError(t, err)
+	require.Equal(t, &Config{
+		driver:   "mysql",
+		cli:      "podman",
+		Image:    "docker.io/arigaio/mysql:8",
+		Database: "dev",
+		Env:      []string{"MYSQL_ROOT_PASSWORD=pass", "MYSQL_DATABASE=dev"},
+		User:     url.UserPassword("root", pass),
+		Port:     "3306",
+		Out:      io.Discard,
+		setup:    []string{"CREATE DATABASE IF NOT EXISTS `dev`"},
+	}, cfg)
+
+	u, err = url.Parse("podman+postgres://docker.io/library/postgres:16/dev")
+	require.NoError(t, err)
+	cfg, err = FromURL(u)
+	require.NoError(t, err)
+	require.Equal(t, "podman", cfg.cli)
+	require.Equal(t, "postgres", cfg.driver)
+	require.Equal(t, "docker.io/library/postgres:16", cfg.Image)
+	require.Equal(t, "dev", cfg.Database)
+
+	// Explicit CLI option overrides the scheme.
+	cfg, err = FromURL(u, CLI("docker"))
+	require.NoError(t, err)
+	require.Equal(t, "docker", cfg.cli)
+
+	// Docker URLs leave the CLI to be resolved on Run.
+	u, err = url.Parse("docker+postgres://docker.io/library/postgres:16/dev")
+	require.NoError(t, err)
+	cfg, err = FromURL(u)
+	require.NoError(t, err)
+	require.Empty(t, cfg.cli)
+
+	u, err = url.Parse("nerdctl://mysql/8")
+	require.NoError(t, err)
+	_, err = FromURL(u)
+	require.EqualError(t, err, `unsupported container runtime "nerdctl"`)
+}
+
+func TestResolveCLI(t *testing.T) {
+	fakeBin := func(t *testing.T, names ...string) string {
+		dir := t.TempDir()
+		for _, n := range names {
+			require.NoError(t, os.WriteFile(filepath.Join(dir, n), []byte("#!/bin/sh\n"), 0755))
+		}
+		return dir
+	}
+	resolve := func(c *Config) string {
+		require.NoError(t, c.resolveCLI())
+		return c.cli
+	}
+	t.Setenv(CLIEnv, "")
+
+	// Explicitly set.
+	t.Setenv("PATH", fakeBin(t, "docker"))
+	require.Equal(t, "podman", resolve(&Config{cli: "podman"}))
+
+	// Docker is preferred.
+	t.Setenv("PATH", fakeBin(t, "docker", "podman"))
+	require.Equal(t, "docker", resolve(&Config{}))
+
+	// Fallback to podman.
+	t.Setenv("PATH", fakeBin(t, "podman"))
+	require.Equal(t, "podman", resolve(&Config{}))
+
+	// Environment override.
+	t.Setenv(CLIEnv, "/usr/local/bin/podman")
+	c := &Config{}
+	require.Equal(t, "/usr/local/bin/podman", resolve(c))
+	require.True(t, c.isPodman())
+	t.Setenv(CLIEnv, "")
+
+	// Nothing found.
+	t.Setenv("PATH", fakeBin(t))
+	require.EqualError(t, (&Config{}).resolveCLI(), "no container runtime found: install docker or podman")
+}
+
+func TestIsPodman(t *testing.T) {
+	for cli, want := range map[string]bool{
+		"":                      false,
+		"docker":                false,
+		"/usr/bin/docker":       false,
+		"podman":                true,
+		"/usr/local/bin/podman": true,
+		"podman.exe":            true,
+		"Podman.EXE":            true,
+	} {
+		require.Equal(t, want, (&Config{cli: cli}).isPodman(), cli)
+	}
+}
+
 func TestImageURL(t *testing.T) {
 	for img, u := range map[string]string{
 		"postgres:15":                    "docker+postgres://_/postgres:15",
@@ -479,4 +577,15 @@ func TestContainerURL(t *testing.T) {
 	u, err = c.URL()
 	require.NoError(t, err)
 	require.Equal(t, "postgres://postgres:pass@host.docker.internal:5432/?sslmode=disable", u.String())
+
+	// Podman uses CONTAINER_HOST instead of DOCKER_HOST.
+	c.cli = "podman"
+	t.Setenv("CONTAINER_HOST", "")
+	u, err = c.URL()
+	require.NoError(t, err)
+	require.Equal(t, "postgres://postgres:pass@localhost:5432/?sslmode=disable", u.String())
+	t.Setenv("CONTAINER_HOST", "ssh://user@podman.internal:22/run/podman/podman.sock")
+	u, err = c.URL()
+	require.NoError(t, err)
+	require.Equal(t, "postgres://postgres:pass@podman.internal:5432/?sslmode=disable", u.String())
 }
